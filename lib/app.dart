@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:college_sop_assistant/features/auth/screens/login_screen.dart';
+import 'package:college_sop_assistant/core/theme/app_theme.dart';
 
 class SOPAssistantApp extends StatelessWidget {
   const SOPAssistantApp({super.key});
@@ -10,12 +11,7 @@ class SOPAssistantApp extends StatelessWidget {
       title: 'YWCC SOP Assistant',
       debugShowCheckedModeBanner: false,
 
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.indigo,
-        ),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.lightTheme,
 
       home: const LoginScreen(),
     );
