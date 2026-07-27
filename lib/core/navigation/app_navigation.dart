@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:college_sop_assistant/features/dashboard/screens/dashboard_screen.dart';
-
+import 'package:college_sop_assistant/features/chat/screens/chat_screen.dart';
 
 class AppNavigation extends StatefulWidget {
   const AppNavigation({super.key});
@@ -19,12 +19,8 @@ class _AppNavigationState extends State<AppNavigation> {
 
     const DashboardScreen(),
 
-    const Center(
-      child: Text(
-        "SOP Chat Coming Soon",
-        style: TextStyle(fontSize: 24),
-      ),
-    ),
+    const ChatScreen(),
+
 
     const Center(
       child: Text(
