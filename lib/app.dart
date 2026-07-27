@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'features/auth/screens/login_screen.dart';
+import 'package:college_sop_assistant/features/auth/screens/login_screen.dart';
 
 class SOPAssistantApp extends StatelessWidget {
   const SOPAssistantApp({super.key});
