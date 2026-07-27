@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:college_sop_assistant/features/auth/screens/dashboard_screen.dart';
+import 'package:college_sop_assistant/features/dashboard/screens/dashboard_screen.dart';
 
 
 class AppNavigation extends StatefulWidget {
