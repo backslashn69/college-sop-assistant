@@ -1,10 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:college_sop_assistant/features/chat/models/chat_message.dart';
+import 'package:college_sop_assistant/features/chat/widgets/chat_bubble.dart';
 
 class ChatScreen extends StatelessWidget {
   const ChatScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+
+    final messages = [
+  ChatMessage(
+    text: "How do I process a transcript request?",
+    isUser: true,
+  ),
+  ChatMessage(
+    text:
+        "Step 1: Verify the student's identity.\n\n"
+        "Step 2: Check for financial holds.\n\n"
+        "Step 3: Generate the transcript.\n\n"
+        "Step 4: Record the request in the Student Information System.",
+    isUser: false,
+    source: "Registrar SOP v3.2 • Section 4.1 • Page 18",
+  ),
+];
     return Scaffold(
       appBar: AppBar(
         title: const Text("YWCC SOP Assistant"),
@@ -14,36 +32,12 @@ class ChatScreen extends StatelessWidget {
           Expanded(
             child: ListView(
               padding: const EdgeInsets.all(16),
-              children: const [
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Card(
-                    child: Padding(
-                      padding: EdgeInsets.all(12),
-                      child: Text(
-                        "How do I process a transcript request?",
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 12),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Card(
-                    child: Padding(
-                      padding: EdgeInsets.all(12),
-                      child: Text(
-                        "Step 1: Verify the student's identity.\n\n"
-                        "Step 2: Check for any financial holds.\n\n"
-                        "Step 3: Generate the official transcript.\n\n"
-                        "Source: Registrar SOP v3.2\nPage 18",
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              children: messages.map((message) {
+                return ChatBubble(message: message);
+              }).toList(),
             ),
           ),
+
 
           const Divider(height: 1),
 
