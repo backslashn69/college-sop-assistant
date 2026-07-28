@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:college_sop_assistant/features/chat/models/chat_message.dart';
 import 'package:college_sop_assistant/features/chat/widgets/chat_bubble.dart';
+import 'package:college_sop_assistant/features/chat/widgets/typing_indicator.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -11,69 +12,117 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  bool _isTyping = false;
 
   final List<ChatMessage> _messages = [
     ChatMessage(
-      text: "How do I process a transcript request?",
+      text: 'How do I process a transcript request?',
       isUser: true,
     ),
     ChatMessage(
       text:
           "Step 1: Verify the student's identity.\n\n"
-          "Step 2: Check for financial holds.\n\n"
-          "Step 3: Generate the transcript.",
+          'Step 2: Check for financial holds.\n\n'
+          'Step 3: Generate the transcript.',
       isUser: false,
-      source: "Registrar SOP v3.2 • Section 4.1 • Page 18",
-  ),
-];
-void _sendMessage() {
-  final text = _controller.text.trim();
+      source: 'Registrar SOP v3.2 • Section 4.1 • Page 18',
+    ),
+  ];
 
-  if (text.isEmpty) return;
+  Future<void> _sendMessage() async {
+    final text = _controller.text.trim();
+
+    if (text.isEmpty || _isTyping) {
+      return;
+    }
+
+    setState(() {
+      _messages.add(
+        ChatMessage(
+          text: text,
+          isUser: true,
+        ),
+      );
+
+         _isTyping = true;
+  });
+
+  _controller.clear();
+  _scrollToBottom();
+
+  await Future<void>.delayed(
+    const Duration(seconds: 1),
+  );
+
+  if (!mounted) {
+    return;
+  }
 
   setState(() {
-    _messages.add(
-      ChatMessage(
-        text: text,
-        isUser: true,
-      ),
-    );
+    _isTyping = false;
 
-    // Temporary AI response
+      // Temporary response until the backend is connected.
     _messages.add(
       ChatMessage(
         text:
             "I'm not connected to the SOP database yet.\n\n"
-            "This is where the AI response will appear.",
+            'This is where the AI response will appear.',
         isUser: false,
       ),
     );
   });
 
-  _controller.clear();
-}
+    _controller.clear();
+    _scrollToBottom();
+  }
 
-@override
-  Widget build(BuildContext context) { 
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) {
+        return;
+      }
+
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("YWCC SOP Assistant"),
+        title: const Text('YWCC SOP Assistant'),
       ),
       body: Column(
         children: [
           Expanded(
             child: ListView.builder(
+              controller: _scrollController,
               padding: const EdgeInsets.all(16),
               itemCount: _messages.length,
               itemBuilder: (context, index) {
-                return ChatBubble(message: _messages[index]);
+                  if (_isTyping && index == _messages.length - 1) {
+                    return const TypingIndicator();
+                  }
+                  
+                return ChatBubble(
+                  message: _messages[index],
+                );
               },
             ),
           ),
-
-
           const Divider(height: 1),
-
           Padding(
             padding: const EdgeInsets.all(12),
             child: Row(
@@ -81,21 +130,21 @@ void _sendMessage() {
                 Expanded(
                   child: TextField(
                     controller: _controller,
+                    textInputAction: TextInputAction.send,
+                    onSubmitted: (_) => _sendMessage(),
                     decoration: InputDecoration(
-                      hintText: "Ask an SOP question...",
+                      hintText: 'Ask an SOP question...',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                   ),
                 ),
-
                 const SizedBox(width: 10),
-
                 FilledButton.icon(
                   onPressed: _sendMessage,
                   icon: const Icon(Icons.send),
-                  label: const Text("Send"),
+                  label: const Text('Send'),
                 ),
               ],
             ),
