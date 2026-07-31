@@ -146,6 +146,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 Expanded(
                   child: TextField(
                     controller: _controller,
+                    enabled: !_isTyping,
                     textInputAction: TextInputAction.send,
                     onSubmitted: (_) => _sendMessage(),
                     decoration: InputDecoration(
@@ -158,7 +159,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
                 const SizedBox(width: 10),
                 FilledButton.icon(
-                  onPressed: _sendMessage,
+                  onPressed: _isTyping ? null : _sendMessage,
                   icon: const Icon(Icons.send),
                   label: const Text('Send'),
                 ),
