@@ -13,6 +13,7 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+ 
   bool _isTyping = false;
 
   final List<ChatMessage> _messages = [
@@ -37,22 +38,38 @@ class _ChatScreenState extends State<ChatScreen> {
       return;
     }
 
-    setState(() {
-      _messages.add(
-        ChatMessage(
-          text: text,
-          isUser: true,
-        ),
-      );
+  setState(() {
+    _messages.add(
+      ChatMessage(
+        text: text,
+        isUser: true,
+      ),
+    );
 
-         _isTyping = true;
   });
 
   _controller.clear();
   _scrollToBottom();
 
+  await WidgetsBinding.instance.endOfFrame;
+
   await Future<void>.delayed(
-    const Duration(seconds: 1),
+    const Duration(milliseconds: 300),
+  );
+
+  if (!mounted) {
+    return;
+  }
+
+  setState(() {
+    _isTyping = true;
+  });
+
+  _scrollToBottom();
+
+
+  await Future<void>.delayed(
+    const Duration(seconds: 2),
   );
 
   if (!mounted) {
@@ -73,8 +90,7 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   });
 
-    _controller.clear();
-    _scrollToBottom();
+  _scrollToBottom();
   }
 
   void _scrollToBottom() {
@@ -110,9 +126,9 @@ class _ChatScreenState extends State<ChatScreen> {
             child: ListView.builder(
               controller: _scrollController,
               padding: const EdgeInsets.all(16),
-              itemCount: _messages.length,
+              itemCount: _messages.length + (_isTyping ? 1 : 0),
               itemBuilder: (context, index) {
-                  if (_isTyping && index == _messages.length - 1) {
+                  if (_isTyping && index == _messages.length) {
                     return const TypingIndicator();
                   }
                   
