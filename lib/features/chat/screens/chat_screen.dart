@@ -72,15 +72,16 @@ class _ChatScreenState extends State<ChatScreen> {
 
   final response = await _chatService.getResponse(text);
 
-  if (!mounted) return;
+  if (!mounted) { return; }
 
   setState(() {
     _isTyping = false;
 
     _messages.add(
       ChatMessage(
-        text: response,
+        text: response.text,
         isUser: false,
+        source: response.source,
       ),
     );
   });
