@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
 class ChatResponse {
   final String text;
   final String? source;
@@ -9,17 +12,54 @@ class ChatResponse {
 }
 
 class ChatService {
+  static final Uri _chatUrl = Uri.parse(
+    'http://127.0.0.1:8000/chat',
+  );
+
   Future<ChatResponse> getResponse(String question) async {
-    // Simulates waiting for the future backend response.
-    await Future<void>.delayed(
-      const Duration(seconds: 2),
-    );
+    final http.Response response = await http
+        .post(
+          _chatUrl,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({
+            'question': question,
+          }),
+        )
+        .timeout(
+          const Duration(seconds: 15),
+        );
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Backend request failed with status '
+        '${response.statusCode}.',
+      );
+    }
+
+    final dynamic decodedBody = jsonDecode(response.body);
+
+    if (decodedBody is! Map<String, dynamic>) {
+      throw const FormatException(
+        'The backend returned an invalid response.',
+      );
+    }
+
+    final dynamic answer = decodedBody['answer'];
+    final dynamic source = decodedBody['source'];
+
+    if (answer is! String || answer.trim().isEmpty) {
+      throw const FormatException(
+        'The backend response did not contain an answer.',
+      );
+    }
 
     return ChatResponse(
-      text:
-          "I'm not connected to the SOP database yet.\n\n"
-          "This is where the AI response for \"$question\" will appear.",
-      source: 'Registrar SOP v3.2 • Section 4.1 • Page 18',
+      text: answer,
+      source: source is String && source.trim().isNotEmpty
+          ? source
+          : null,
     );
   }
 }
