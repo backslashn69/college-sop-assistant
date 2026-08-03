@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:college_sop_assistant/features/chat/models/chat_message.dart';
 import 'package:college_sop_assistant/features/chat/widgets/chat_bubble.dart';
 import 'package:college_sop_assistant/features/chat/widgets/typing_indicator.dart';
+import 'package:college_sop_assistant/features/chat/services/chat_service.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -13,6 +14,7 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final ChatService _chatService = ChatService();
  
   bool _isTyping = false;
 
@@ -68,23 +70,16 @@ class _ChatScreenState extends State<ChatScreen> {
   _scrollToBottom();
 
 
-  await Future<void>.delayed(
-    const Duration(seconds: 2),
-  );
+  final response = await _chatService.getResponse(text);
 
-  if (!mounted) {
-    return;
-  }
+  if (!mounted) return;
 
   setState(() {
     _isTyping = false;
 
-      // Temporary response until the backend is connected.
     _messages.add(
       ChatMessage(
-        text:
-            "I'm not connected to the SOP database yet.\n\n"
-            'This is where the AI response will appear.',
+        text: response,
         isUser: false,
       ),
     );
