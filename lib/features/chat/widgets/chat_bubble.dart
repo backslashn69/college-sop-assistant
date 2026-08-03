@@ -11,11 +11,15 @@ class ChatBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isUser = message.isUser;
+    final bool isUser = message.isUser;
+
+    final String formattedTime =
+        TimeOfDay.fromDateTime(message.timestamp).format(context);
 
     return Align(
-      alignment:
-          isUser ? Alignment.centerRight : Alignment.centerLeft,
+      alignment: isUser
+          ? Alignment.centerRight
+          : Alignment.centerLeft,
       child: ConstrainedBox(
         constraints: const BoxConstraints(
           maxWidth: 650,
@@ -30,40 +34,42 @@ class ChatBubble extends StatelessWidget {
             borderRadius: BorderRadius.only(
               topLeft: const Radius.circular(18),
               topRight: const Radius.circular(18),
-              bottomLeft: Radius.circular(isUser ? 18 : 4),
-              bottomRight: Radius.circular(isUser ? 4 : 18),
+              bottomLeft: Radius.circular(
+                isUser ? 18 : 4,
+              ),
+              bottomRight: Radius.circular(
+                isUser ? 4 : 18,
+              ),
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
+                color: Colors.black.withValues(
+                  alpha: 0.08,
+                ),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
             ],
           ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: isUser
+                ? CrossAxisAlignment.end
+                : CrossAxisAlignment.start,
             children: [
-
               Text(
                 message.text,
                 style: TextStyle(
-                  fontSize: 16,
-                  height: 1.5,
                   color: isUser
                       ? Colors.white
                       : Colors.black87,
+                  fontSize: 15,
                 ),
               ),
 
-              if (message.source != null) ...[
-                const SizedBox(height: 14),
-                Divider(
-                  color: Colors.grey.shade300,
-                ),
-                const SizedBox(height: 6),
-
+              if (!isUser && message.source != null) ...[
+                const SizedBox(height: 12),
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Icon(
                       Icons.description_outlined,
@@ -71,12 +77,11 @@ class ChatBubble extends StatelessWidget {
                       color: Colors.blueGrey.shade700,
                     ),
                     const SizedBox(width: 6),
-
                     Expanded(
                       child: Text(
                         message.source!,
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 12,
                           color: Colors.blueGrey.shade700,
                           fontWeight: FontWeight.w600,
                         ),
@@ -84,7 +89,20 @@ class ChatBubble extends StatelessWidget {
                     ),
                   ],
                 ),
-              ]
+              ],
+
+              const SizedBox(height: 6),
+
+              // Message timestamp
+              Text(
+                formattedTime,
+                style: TextStyle(
+                  fontSize: 10,
+                  color: isUser
+                      ? Colors.white70
+                      : Colors.black45,
+                ),
+              ),
             ],
           ),
         ),
