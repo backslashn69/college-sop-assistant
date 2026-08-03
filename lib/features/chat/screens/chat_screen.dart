@@ -69,22 +69,37 @@ class _ChatScreenState extends State<ChatScreen> {
 
   _scrollToBottom();
 
+  try{
+    final response = await _chatService.getResponse(text);
 
-  final response = await _chatService.getResponse(text);
+    if (!mounted) { return; }
 
-  if (!mounted) { return; }
+    setState(() {
+      _isTyping = false;
 
-  setState(() {
-    _isTyping = false;
+      _messages.add(
+        ChatMessage(
+          text: response.text,
+          isUser: false,
+          source: response.source,
+        ),
+      );
+    });
+  } catch(error) {
+    if (!mounted) { return; }
 
-    _messages.add(
-      ChatMessage(
-        text: response.text,
-        isUser: false,
-        source: response.source,
-      ),
-    );
-  });
+    setState(() {
+      _isTyping = false;
+
+      _messages.add(
+        ChatMessage(
+          text: 'Sorry, I could not process your request.' 
+                ' Please try again later.',
+          isUser: false,
+        ),
+      );
+    });
+  }
 
   _scrollToBottom();
   }
