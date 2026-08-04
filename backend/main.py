@@ -168,8 +168,6 @@ async def chat(
 
         else:
             try:
-                # Groq is used for non-procedure questions
-                # that benefit from a concise explanation.
                 answer = await generate_grounded_answer(
                     cleaned_question,
                     answer_chunks,

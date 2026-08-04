@@ -351,8 +351,8 @@ def normalize_section_lines(
     text: str,
 ) -> list[str]:
     """
-    Remove PDF extraction artifacts and restore
-    bullets that were separated from their text.
+    Remove PDF extraction artifacts and reconnect
+    bullet symbols that were separated from their text.
     """
     raw_lines = [
         clean_answer_line(line)
@@ -363,26 +363,50 @@ def normalize_section_lines(
     normalized_lines: list[str] = []
     index = 0
 
+    standalone_bullets = {
+        "o",
+        "○",
+        "-",
+        "•",
+        "●",
+        "▪",
+        "◦",
+    }
+
     while index < len(raw_lines):
         line = raw_lines[index]
 
-        if line.lower() in {"o", "○"}:
+        if line.lower() in standalone_bullets:
             if index + 1 < len(raw_lines):
-                normalized_lines.append(
-                    f"- {raw_lines[index + 1]}"
-                )
+                next_line = raw_lines[
+                    index + 1
+                ].strip()
+
+                next_line = re.sub(
+                    r"^[•●▪◦-]\s*",
+                    "",
+                    next_line,
+                ).strip()
+
+                if next_line:
+                    normalized_lines.append(
+                        f"- {next_line}"
+                    )
+
                 index += 2
                 continue
 
             index += 1
             continue
 
+        # Normalize bullets that remain attached
+        # to their text.
         if re.match(
-            r"^[•●▪◦]\s*",
+            r"^[•●▪◦-]\s*",
             line,
         ):
             line = re.sub(
-                r"^[•●▪◦]\s*",
+                r"^[•●▪◦-]\s*",
                 "- ",
                 line,
             )
@@ -538,13 +562,53 @@ def format_procedure_answer(
 
     save_current_step()
 
-    if not steps:
-        return None
-
     heading = (
         f"To {procedure_name[:1].lower()}"
         f"{procedure_name[1:]}:"
     )
+
+    if not steps:
+        answer_lines = [
+            heading,
+            "",
+        ]
+
+        for line in lines:
+            cleaned_line = line.strip()
+
+            if not cleaned_line:
+                continue
+
+            if cleaned_line.lower() == "important":
+                answer_lines.extend(
+                    [
+                        "",
+                        "Important:",
+                    ]
+                )
+                continue
+
+            is_short_heading = (
+                len(cleaned_line) < 60
+                and not cleaned_line.startswith("- ")
+                and not cleaned_line.endswith(
+                    (
+                        ".",
+                        ":",
+                        "!",
+                        "?",
+                    )
+                )
+            )
+
+            if is_short_heading:
+                cleaned_line = f"{cleaned_line}:"
+
+            answer_lines.append(cleaned_line)
+
+        return "\n".join(
+            answer_lines
+        ).strip()
 
     answer_lines = [
         heading,
@@ -568,12 +632,14 @@ def format_procedure_answer(
             ]
         )
 
-    return "\n".join(answer_lines).strip()
+    return "\n".join(
+        answer_lines
+    ).strip()
 
 def build_precise_answer(
     question: str,
-    matching_chunks: list[dict[str, str | int]],
-) -> str | None:
+    matching_chunks: list[dict[str, str | int]],) -> str | None:
+    
     if not matching_chunks:
         return None
 
