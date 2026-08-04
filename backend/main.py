@@ -6,6 +6,8 @@ from document_service import (
     load_all_sops,
 )
 
+from llm_service import generate_grounded_answer
+
 from retrieval_service import (
     build_precise_answer,
     find_best_sop_chunks,
@@ -15,6 +17,12 @@ from retrieval_service import (
 app = FastAPI(
     title="YWCC SOP Assistant API",
     version="1.0.0",
+)
+
+
+INSUFFICIENT_ANSWER = (
+    "I could not find enough information "
+    "in the available SOP documents."
 )
 
 
@@ -73,9 +81,7 @@ async def document_status() -> dict[
             ),
             "pages": len(sop_pages),
             "chunks": len(sop_chunks),
-            "characters": (
-                total_characters
-            ),
+            "characters": total_characters,
         }
 
     except FileNotFoundError as error:
@@ -108,6 +114,19 @@ async def chat(
     request: ChatRequest,
 ) -> ChatResponse:
     try:
+        cleaned_question = (
+            request.question.strip()
+        )
+
+        if not cleaned_question:
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    "The question cannot "
+                    "be empty."
+                ),
+            )
+
         sop_pages = load_all_sops()
 
         sop_chunks = build_sop_chunks(
@@ -116,41 +135,72 @@ async def chat(
 
         matching_chunks = (
             find_best_sop_chunks(
-                request.question,
+                cleaned_question,
                 sop_chunks,
             )
         )
 
         if not matching_chunks:
             return ChatResponse(
-                answer=(
-                    "I could not find a "
-                    "relevant procedure in "
-                    "the available SOP "
-                    "documents."
-                ),
+                answer=INSUFFICIENT_ANSWER,
                 source=None,
             )
 
-        answer = build_precise_answer(
-            request.question,
-            matching_chunks,
+
+        answer_chunks = matching_chunks[:2]
+
+        primary_chunk = answer_chunks[0]
+
+        section_type = str(
+            primary_chunk.get(
+                "type",
+                "section",
+            )
         )
+
+        if section_type == "procedure":
+            # Procedures must remain deterministic so that
+            # steps, warnings, and ordering are preserved.
+            answer = build_precise_answer(
+                cleaned_question,
+                [primary_chunk],
+            )
+
+        else:
+            try:
+                # Groq is used for non-procedure questions
+                # that benefit from a concise explanation.
+                answer = await generate_grounded_answer(
+                    cleaned_question,
+                    answer_chunks,
+                )
+
+            except Exception as error:
+                print(
+                    "Groq generation failed:",
+                    error,
+                )
+
+                answer = build_precise_answer(
+                    cleaned_question,
+                    answer_chunks,
+                )
 
         if not answer:
             return ChatResponse(
-                answer=(
-                    "I found related SOP "
-                    "content, but I could "
-                    "not extract a precise "
-                    "answer from it."
-                ),
+                answer=INSUFFICIENT_ANSWER,
+                source=None,
+            )
+
+        if answer.strip() == INSUFFICIENT_ANSWER:
+            return ChatResponse(
+                answer=INSUFFICIENT_ANSWER,
                 source=None,
             )
 
         sources: list[str] = []
 
-        for chunk in matching_chunks:
+        for chunk in answer_chunks:
             page_start = int(
                 chunk.get(
                     "page_start",
@@ -166,10 +216,13 @@ async def chat(
             )
 
             if page_start == page_end:
-                page_label = f"Page {page_start}"
+                page_label = (
+                    f"Page {page_start}"
+                )
             else:
                 page_label = (
-                    f"Pages {page_start}-{page_end}"
+                    f"Pages {page_start}-"
+                    f"{page_end}"
                 )
 
             source = (
@@ -182,11 +235,12 @@ async def chat(
                 sources.append(source)
 
         return ChatResponse(
-            answer=answer,
-            source=" | ".join(
-                sources[:2]
-            ),
+            answer=answer.strip(),
+            source=" | ".join(sources),
         )
+
+    except HTTPException:
+        raise
 
     except FileNotFoundError as error:
         raise HTTPException(
@@ -204,7 +258,7 @@ async def chat(
         raise HTTPException(
             status_code=500,
             detail=(
-                "Unable to search SOP "
-                f"documents: {error}"
+                "Unable to process the SOP "
+                f"question: {error}"
             ),
         ) from error
