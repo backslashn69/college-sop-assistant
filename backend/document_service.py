@@ -1,4 +1,5 @@
 import re
+from functools import lru_cache
 from pathlib import Path
 
 from pypdf import PdfReader
@@ -232,3 +233,29 @@ def build_sop_chunks(
         )
 
     return chunks
+
+@lru_cache(maxsize=1)
+def load_sop_index() -> tuple[
+    list[dict[str, str | int]],
+    list[dict[str, str | int]],
+]:
+    """
+    Load and process all SOP documents once.
+
+    The cached result is reused for future requests
+    until FastAPI restarts or the cache is cleared.
+    """
+    sop_pages = load_all_sops()
+
+    sop_chunks = build_sop_chunks(
+        sop_pages
+    )
+
+    return sop_pages, sop_chunks
+
+
+def clear_sop_cache() -> None:
+    """
+    Clear the cached SOP pages and chunks.
+    """
+    load_sop_index.cache_clear()

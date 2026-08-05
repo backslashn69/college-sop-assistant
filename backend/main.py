@@ -1,10 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
-from document_service import (
-    build_sop_chunks,
-    load_all_sops,
-)
+from document_service import load_sop_index
 
 from llm_service import generate_grounded_answer
 
@@ -58,11 +55,9 @@ async def document_status() -> dict[
     int | str,
 ]:
     try:
-        sop_pages = load_all_sops()
-
-        sop_chunks = build_sop_chunks(
-            sop_pages
-        )
+        sop_pages, sop_chunks = (
+            load_sop_index() 
+            )
 
         document_names = {
             str(page["document"])
@@ -127,11 +122,8 @@ async def chat(
                 ),
             )
 
-        sop_pages = load_all_sops()
-
-        sop_chunks = build_sop_chunks(
-            sop_pages
-        )
+        _, sop_chunks = load_sop_index() 
+            
 
         matching_chunks = (
             find_best_sop_chunks(
